@@ -4,31 +4,36 @@ import numpy as np
 import re
 import string
 
+def browse(url):
+    page = requests.get(url)
+    soup = BeautifulSoup(page.content,'html.parser')
+    f = open("crawler_arxiv.csv",'wt',encoding = 'utf-8')
+    abstract = np.array([])
+    title = np.array([])
+    abstract_aim = np.array([])
+    index_aim = np.array([])
+    main_tag = soup.find('li', class_='arxiv-result')
+    dic = np.array([])
+    for li_tag in main_tag.next_siblings:
+        if(li_tag == None or li_tag =='\n'):
+            continue
+        information = {'abstract':'0', 'title':'0','author':'0','year':'0'}
+        #get abstract
+        abstract_tag = li_tag.find('span', class_='abstract-full has-text-grey-dark mathjax')
+        abstract_txt = list(abstract_tag.strings)[0]
+        information['abstract'] = abstract_txt
+        #title
+        title_tag = li_tag.find('p', class_="title is-5 mathjax")
+        title_txt = title_tag.string
+        information['title'] = title_txt
 
-page = requests.get("https://arxiv.org/search/cond-mat?query=Alicea%2C+J&searchtype=author&abstracts=show&order=-announced_date_first&size=50")
-soup = BeautifulSoup(page.content,'html.parser')
-f = open("crawler_arxiv.csv",'wt',encoding = 'utf-8')
-first_tag = soup.find_all('span', class_='abstract-full has-text-grey-dark mathjax') 
-abstract = np.array([])
-title = np.array([])
-abstract_aim = np.array([])
-index_aim = np.array([])
-for sub_tag in first_tag:
-    abstract_txt = list(sub_tag.strings)[0]
-    #Because the sub_tag contains multiple string. the zeroth one is what we want
-    abstract = np.append(abstract, abstract_txt)
-searching_text = 'Majorana'
+        dic = np.append(dic,information)
+    f.close()
+    return dic
+        
+url = "https://arxiv.org/search/?searchtype=author&query=Alicea%2C+J&abstracts=show&size=200&order=-announced_date_first"
+dic = browse(url)
+print(dic)
 
-#find title 
-title_tag = soup.find_all('p', class_ = "title is-5 mathjax")
-for sub_tab in title_tag:
-    title_txt = sub_tab.string
-    title = np.append(title, title_txt)
-#get the aim title 
-for index, line in enumerate(abstract):
-    if line.find(searching_text) > 0:
-        title_aim = title[index]
-        print(title_aim,file = f)
-        print(index,file = f)
-        #print(index,file = f)
-f.close()
+
+
